@@ -17,6 +17,8 @@ from external.e2e_metrics_tsv import read_tsv
 from external.webnlg_entry import Triple
 import external.webnlg_parser as webnlg_parser
 
+from util.sentence_scorer import SentenceScorer
+
 
 TEMPLATE_PATHS = {
     'e2e': 'templates/e2e_templates.json',
@@ -53,6 +55,9 @@ class Evaluator:
         self.model = RobertaForSequenceClassification.from_pretrained('roberta-large-mnli')
         if self.use_gpu:
             self.model.to('cuda')
+
+        device = "cuda" if self.use_gpu else "cpu"
+        self.sentence_scorer = SentenceScorer(device=device, reduce_mode="gmean")
 
         # load templates
         if use_templates:
@@ -92,7 +97,7 @@ class Evaluator:
             if isinstance(template, dict):
                 template = template[triple.object]
             if isinstance(template, list):
-                template = template[0]  # XXX don't take the first, but the best template
+                template = self.sentence_scorer.select_best(templates)
             template = template.replace('<subject>', triple.subject)
             obj_str = re.sub('^["\'](.*)["\']$', r'\1', triple.object)  # remove quotes around values
             template = template.replace('<object>', obj_str)

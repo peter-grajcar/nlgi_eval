@@ -1,4 +1,5 @@
 transformers==3.0.0
+lm-scorer==0.4.2
 logzero
 numpy
 pandas
